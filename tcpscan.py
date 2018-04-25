@@ -4,7 +4,7 @@
 tcpscan.py 
 -John Taylor
 
-A simple, multi-threaded IPv4 TCP port scanner for Python 3.5
+A simple, multi-threaded, cross-platform IPv4 TCP port scanner for Python 3.5
 
 examples
 --------
@@ -47,7 +47,7 @@ from datetime import datetime
 from random import shuffle
 from queue import Queue
 
-pgm_version = "1.32"
+pgm_version = "1.33"
 
 # default maximum number of concurrent threads, changed with -T
 max_workers = 100
@@ -382,7 +382,7 @@ def main() -> None:
     global resolve_dns, runtime_stats, runtime_stats_last_timestamp
     global disp_runtime_queue
 
-    parser = argparse.ArgumentParser(description="tcpscan: a simple, multi-threaded IPv4 TCP port scanner", epilog="tcpscan version: %s" % (pgm_version))
+    parser = argparse.ArgumentParser(description="tcpscan: a simple, multi-threaded, cross-platform IPv4 TCP port scanner", epilog="tcpscan version: %s" % (pgm_version))
     parser.add_argument("target", help="e.g. 192.168.1.0/24 192.168.1.100 www.example.com", nargs="?", default=".")
     parser.add_argument("-x", "--skipnetblock", help="skip a sub-netblock, e.g. 192.168.1.96/28")
     parser.add_argument("-X", "--skipports", help="exclude a subset of ports, e.g. 135-139")
@@ -393,7 +393,7 @@ def main() -> None:
     parser.add_argument("-S", "--shuffleports", help="randomize the order ports are scanned", action="store_true")
     parser.add_argument("-c", "--closed", help="output ports that are closed", action="store_true")
     parser.add_argument("-o", "--output", help="output to CSV file")
-    parser.add_argument("-d", "--dns", help="revolve IPs to dns names", action="store_true")
+    parser.add_argument("-d", "--dns", help="resolve IPs to host names", action="store_true")
     parser.add_argument("-v", "--verbose", help="output statistics", action="store_true")
     parser.add_argument("-r", "--runtime", help="periodically display runtime stats every RUNTIME seconds to STDERR")
     parser.add_argument("-l", "--loop", help="repeat the port scan LOOP times, 0 for continuous")
