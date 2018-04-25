@@ -14,7 +14,7 @@ examples
 2) python3 tcpscan.py -v 172.16.51.0/29
     (basic usage, scans 100 of the most common ports)
 
-3) python3 tcpscan.py -p1-65535 -v 172.16.51.0/29
+3) python3 tcpscan.py -p all -v 172.16.51.0/29
     (scan all ports, from 172.16.51.0 to 172.16.51.7)
 
 4) python3 tcpscan.py -v -r 4 -o net.csv 172.16.51.0/26
