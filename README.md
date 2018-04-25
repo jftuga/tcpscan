@@ -1,5 +1,5 @@
 # tcpscan
-A fast, simple, multi-threaded cross-platform IPv4 TCP port scanner
+A fast, simple, multi-threaded cross-platform, IPv4 TCP port scanner
 
 This will run under Windows, Linux and MaxOS. 
 
@@ -39,7 +39,7 @@ tcpscan --help
       -c, --closed          output ports that are closed
       -o OUTPUT, --output OUTPUT
                             output to CSV file
-      -d, --dns             revolve IPs to dns names
+      -d, --dns             resolve IPs to host names
       -v, --verbose         output statistics
       -r RUNTIME, --runtime RUNTIME
                             periodically display runtime stats every RUNTIME
