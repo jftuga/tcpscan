@@ -1,5 +1,5 @@
 # tcpscan
-A fast, simple, multi-threaded IPv4 TCP port scanner
+A fast, simple, multi-threaded cross-platform IPv4 TCP port scanner
 
 This will run under Windows, Linux and MaxOS. 
 
@@ -15,7 +15,7 @@ tcpscan --help
                       [-v] [-r RUNTIME] [-l LOOP] [-lo] [-lc] [-L]
                       [target]
     
-    tcpscan: a simple, multi-threaded IPv4 TCP port scanner
+    tcpscan: a simple, multi-threaded cross-platform IPv4 TCP port scanner
     
     positional arguments:
       target                e.g. 192.168.1.0/24 192.168.1.100 www.example.com
