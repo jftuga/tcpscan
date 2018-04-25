@@ -1,9 +1,9 @@
 # tcpscan
-A fast, simple, multi-threaded cross-platform, IPv4 TCP port scanner
+A fast, simple, multi-threaded, cross-platform, IPv4 TCP port scanner
 
-This will run under Windows, Linux and MaxOS. 
+This will run under Windows, Linux and MacOS. 
 
-A stand-alone windows executable is located on the [releases page](https://github.com/jftuga/tcpscan/releases).
+A stand-alone windows executable is provided on the [releases page](https://github.com/jftuga/tcpscan/releases).
 
 ```
 
