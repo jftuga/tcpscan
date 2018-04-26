@@ -386,7 +386,7 @@ def main() -> None:
     parser.add_argument("target", help="e.g. 192.168.1.0/24 192.168.1.100 www.example.com", nargs="?", default=".")
     parser.add_argument("-x", "--skipnetblock", help="skip a sub-netblock, e.g. 192.168.1.96/28")
     parser.add_argument("-X", "--skipports", help="exclude a subset of ports, e.g. 135-139")
-    parser.add_argument("-p", "--ports", help="comma separated list or hyphenated range, e.g. 22,80,443,445,515  e.g. 80-515  e.g. all")
+    parser.add_argument("-p", "--ports", help="comma separated list or hyphenated range, e.g. 22,80,443,445,515  e.g. 80-515  e.g. all (without -p, the %s most common ports are scanned)" % (len(default_port_list)))
     parser.add_argument("-T", "--threads", help="number of concurrent threads, default: %s" % (max_workers))
     parser.add_argument("-t", "--timeout", help="number of seconds to wait for a connect, default: %s for lan, %s for wan" % (connect_timeout_lan,connect_timeout_wan))
     parser.add_argument("-s", "--shufflehosts", help="randomize the order IPs are scanned", action="store_true")
@@ -413,7 +413,7 @@ def main() -> None:
         except:
             msg = "\n%s\n%s\n" % (sys.exc_info()[0],sys.exc_info()[1])
             print(msg)
-            sys.exit(0)
+            sys.exit(1)
         finally:
             sys.exit(0)
     
