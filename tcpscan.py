@@ -47,7 +47,7 @@ from datetime import datetime
 from random import shuffle
 from queue import Queue
 
-pgm_version = "1.33"
+pgm_version = "1.34"
 
 # default maximum number of concurrent threads, changed with -T
 max_workers = 100
@@ -420,7 +420,11 @@ def main() -> None:
     if "." == args.target:
         args.target = "127.0.0.1"
     if args.threads:
-        max_workers = int(args.threads)
+        try:
+            max_workers = int(args.threads)
+        except:
+            print("Unable to set thread count to:", args.threads)
+            sys.exit(1)
     if args.timeout:
         connect_timeout = float(args.timeout)
     if args.output:
