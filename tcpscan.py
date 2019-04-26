@@ -47,7 +47,7 @@ from datetime import datetime
 from random import shuffle
 from queue import Queue
 
-pgm_version = "1.34"
+pgm_version = "1.35"
 
 # default maximum number of concurrent threads, changed with -T
 max_workers = 100
@@ -439,7 +439,7 @@ def main() -> None:
         if "all" == args.ports.lower():
             args.ports = "1-65535"
 
-    if args.loopopen:
+    if args.loopopen or args.loopclose:
         args.loop = "0"
 
     loop_seconds = int(args.loop) if args.loop else 1
@@ -510,6 +510,13 @@ def main() -> None:
             print("[%s] completed loops:%s" % (time.strftime("%Y-%m-%d %H:%M:%S"), loop+1))
             break
 
+        if args.loopclose:
+            if True not in all_results.values():
+                now_all_closed = True
+                break
+            else:
+                time.sleep(0.70)
+
         if loop_seconds and args.loop:
             try:
                 print("[%s] completed loops:%s" % (time.strftime("%Y-%m-%d %H:%M:%S"), loop+1))
@@ -519,12 +526,6 @@ def main() -> None:
                 print("\nYou pressed Ctrl+C")
                 break
 
-        if args.loopclose:
-            if True not in all_results.values():
-                now_all_closed = True
-                break
-            else:
-                time.sleep(0.70)
 
     if args.loopclose and now_all_closed:
         if not loop:
