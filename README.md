@@ -52,6 +52,6 @@ optional arguments:
                         [mutually exclusive; but works with --output and
                         --dns]
 
-tcpscan version: 1.34
+tcpscan version: 1.35
 
 ```
