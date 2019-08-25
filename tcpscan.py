@@ -41,13 +41,14 @@ import argparse
 import time
 import ipaddress
 import concurrent.futures
+import subprocess
 import threading
 from collections import defaultdict
 from datetime import datetime
 from random import shuffle
 from queue import Queue
 
-pgm_version = "1.35"
+pgm_version = "1.40"
 
 # default maximum number of concurrent threads, changed with -T
 max_workers = 100
@@ -365,6 +366,15 @@ def tcp_listen_setup(ports:str, output:str) -> None:
 
 #############################################################################################
 
+def execute_pgm(exec_cmd:tuple):
+    print()
+    print("Running: %s" % (" ".join(exec_cmd)))
+    result = subprocess.run(args=exec_cmd, capture_output=False, check=False)
+    #stdout = result.stdout.decode()
+    #stderr = result.stderr.decode()
+
+#############################################################################################
+
 def main() -> None:
     """Process command-line arguments, scan hosts/ports, print results.
     
@@ -400,7 +410,9 @@ def main() -> None:
     parser.add_argument("-lo", "--loopopen", help="repeat the port scan until all port(s) are open", action="store_true")
     parser.add_argument("-lc", "--loopclose", help="repeat the port scan until all port(s) are closed", action="store_true")
     parser.add_argument("-L", "--listen", help="listen on given TCP port(s) for incoming connection(s) [mutually exclusive; but works with --output and --dns]", action="store_true")
-
+    parser.add_argument("-sc", "--statechange", help="Wait for a change in state and execute --execopen or --execclose accordingly", action="store_true")
+    parser.add_argument("-exop", "--execopen", help="Run program on state change to open. cmdline subsitutions: @IP @PORTS @DATE @NEWSTATE")
+    parser.add_argument("-excl", "--execclose", help="Run program on state change to closed. cmdline subsitutions: @IP @PORTS @DATE @NEWSTATE")
 
     args = parser.parse_args()
 
@@ -505,6 +517,11 @@ def main() -> None:
                     args.loop = False
                     now_all_opened = True
                     print( chr(7) ) # beep
+                    if args.execopen:
+                        now = time.strftime("%Y%m%d_%H%M%S")
+                        port_list = ",".join([str(port) for port in sorted(all_results.keys())])
+                        cmd = args.execopen.replace("@IP",my_ip).replace("@PORTS", port_list).replace("@DATE", now).replace("@NEWSTATE","OPENED")
+                        execute_pgm(cmd.split(" "))
 
         if now_all_opened:
             print("[%s] completed loops:%s" % (time.strftime("%Y-%m-%d %H:%M:%S"), loop+1))
@@ -532,6 +549,11 @@ def main() -> None:
             loop += 1
         print("[%s] completed loops:%s" % (time.strftime("%Y-%m-%d %H:%M:%S"), loop))
         print( chr(7) ) # beep
+        if args.execclose:
+            now = time.strftime("%Y%m%d_%H%M%S")
+            port_list = ",".join([str(port) for port in sorted(all_results.keys())])
+            cmd = args.execclose.replace("@IP",my_ip).replace("@PORTS", port_list).replace("@DATE", now).replace("@NEWSTATE","CLOSED")
+            execute_pgm(cmd.split(" "))
 
     if args.runtime:
         while not disp_runtime_queue.empty():
