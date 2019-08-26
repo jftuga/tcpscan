@@ -48,7 +48,7 @@ from datetime import datetime
 from random import shuffle
 from queue import Queue
 
-pgm_version = "1.40"
+pgm_version = "1.41"
 
 # default maximum number of concurrent threads, changed with -T
 max_workers = 100
@@ -85,6 +85,10 @@ fp_tcp_listen = False
 
 # save DNS lookups into a dict where key=ip, val=hostname
 dns_cache = {}
+
+# keep track of current port state, used with -sc option
+# example: ip_port_state["192.168.1.1"][22] = True
+ip_port_state = defaultdict(dict)
 
 #############################################################################################
 
@@ -494,6 +498,7 @@ def main() -> None:
     now_all_closed = False
 
     t1 = datetime.now()
+    #has_state_changed_before = False
     for loop in range(0,loop_seconds):
         for tmp in hosts:
             my_ip = "%s" % (tmp)
@@ -511,6 +516,14 @@ def main() -> None:
             except KeyboardInterrupt:
                 print("\nYou pressed Ctrl+C")
                 break
+
+            if args.statechange:
+                print(all_results)
+                for p in all_results:
+                    print("yy:", p, all_results[p])
+                    ip_port_state[my_ip][p] = all_results[p]
+
+                print("xx:", ip_port_state)
 
             if args.loopopen:
                 if False not in all_results.values():
