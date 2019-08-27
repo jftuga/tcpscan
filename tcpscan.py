@@ -415,8 +415,8 @@ def main() -> None:
     parser.add_argument("-lc", "--loopclose", help="repeat the port scan until all port(s) are closed", action="store_true")
     parser.add_argument("-L", "--listen", help="listen on given TCP port(s) for incoming connection(s) [mutually exclusive; but works with --output and --dns]", action="store_true")
     parser.add_argument("-sc", "--statechange", help="Wait for a change in state and execute --execopen or --execclose accordingly", action="store_true")
-    parser.add_argument("-exop", "--execopen", help="Run program on state change to open. cmdline subsitutions: @IP @PORTS @DATE @NEWSTATE")
-    parser.add_argument("-excl", "--execclose", help="Run program on state change to closed. cmdline subsitutions: @IP @PORTS @DATE @NEWSTATE")
+    parser.add_argument("-exop", "--execopen", help="Run program on state change to open. cmdline substitutions: @IP @PORTS @DATE @NEWSTATE")
+    parser.add_argument("-excl", "--execclose", help="Run program on state change to closed. cmdline substitutions: @IP @PORTS @DATE @NEWSTATE")
 
     args = parser.parse_args()
 
