@@ -463,7 +463,7 @@ def main() -> None:
     if args.loopclose:
         loop_seconds = 0
 
-    if 0 == loop_seconds:
+    if 0 == loop_seconds or args.statechange:
             loop_seconds = int(sys.maxsize) - 1
     
     port_list = args.ports if args.ports else default_port_list
@@ -517,13 +517,21 @@ def main() -> None:
                 print("\nYou pressed Ctrl+C")
                 break
 
-            if args.statechange:
-                print(all_results)
+            if args.statechange and not len(ip_port_state):
+                print("[%s] completed loops:%s" % (time.strftime("%Y-%m-%d %H:%M:%S"), loop+1))
+                time.sleep(0.70)
                 for p in all_results:
-                    print("yy:", p, all_results[p])
                     ip_port_state[my_ip][p] = all_results[p]
-
-                print("xx:", ip_port_state)
+            elif args.statechange:
+                if my_ip in ip_port_state:
+                    for p in all_results:
+                        if ip_port_state[my_ip][p] != all_results[p]:
+                            ip_port_state[my_ip][p] = all_results[p]
+                            line = "{}\t{}\tstate changed".format(my_ip, p)
+                            print(line)
+                            print( chr(7) ) # beep
+                print("[%s] completed loops:%s" % (time.strftime("%Y-%m-%d %H:%M:%S"), loop+1))
+                time.sleep(0.70)
 
             if args.loopopen:
                 if False not in all_results.values():
