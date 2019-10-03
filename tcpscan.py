@@ -43,6 +43,7 @@ import ipaddress
 import concurrent.futures
 import subprocess
 import threading
+import platform
 from collections import defaultdict
 from datetime import datetime
 from random import shuffle
@@ -396,6 +397,11 @@ def main() -> None:
     global resolve_dns, runtime_stats, runtime_stats_last_timestamp
     global disp_runtime_queue
 
+    on_windows = True if platform.system() == "Windows" else False
+    if on_windows:
+        import ctypes
+        MessageBox = ctypes.windll.user32.MessageBoxW
+
     parser = argparse.ArgumentParser(description="tcpscan: a simple, multi-threaded, cross-platform IPv4 TCP port scanner", epilog="tcpscan version: %s" % (pgm_version))
     parser.add_argument("target", help="e.g. 192.168.1.0/24 192.168.1.100 www.example.com", nargs="?", default=".")
     parser.add_argument("-x", "--skipnetblock", help="skip a sub-netblock, e.g. 192.168.1.96/28")
@@ -414,7 +420,9 @@ def main() -> None:
     parser.add_argument("-lo", "--loopopen", help="repeat the port scan until all port(s) are open", action="store_true")
     parser.add_argument("-lc", "--loopclose", help="repeat the port scan until all port(s) are closed", action="store_true")
     parser.add_argument("-L", "--listen", help="listen on given TCP port(s) for incoming connection(s) [mutually exclusive; but works with --output and --dns]", action="store_true")
-    parser.add_argument("-sc", "--statechange", help="Wait for a change in state and execute --execopen or --execclose accordingly")
+    parser.add_argument("-sc", "--statechange", help="Wait for a change in state and execute a command")
+    if on_windows:
+        parser.add_argument("-mb", "--msgbox", help="Wait for a change in state and display a GUI Message Box.", action="store_true")
     parser.add_argument("-exop", "--execopen", help="Run program on state change to open. cmdline substitutions: @IP @PORTS @DATE @NEWSTATE")
     parser.add_argument("-excl", "--execclose", help="Run program on state change to closed. cmdline substitutions: @IP @PORTS @DATE @NEWSTATE")
 
@@ -534,7 +542,13 @@ def main() -> None:
                             now = time.strftime("%Y%m%d_%H%M%S")
                             port_list = ",".join([str(port) for port in sorted(all_results.keys())])
                             cmd = args.statechange.replace("@IP",my_ip).replace("@PORTS", port_list).replace("@DATE", now).replace("@NEWSTATE","OPENED")
-                            execute_pgm(cmd.split(" "))
+                            #execute_pgm(cmd.split(" "))
+
+                            if args.msgbox:
+                                now = time.strftime("%Y%m%d_%H%M%S")
+                                port_list = ",".join([str(port) for port in sorted(all_results.keys())])
+                                MessageBox(None, "ip:%s\nports:%s\ndate:%s\n" % (my_ip,port_list,now), 'tcpscan', 0)
+
 
                 print("[%s] completed loops:%s" % (time.strftime("%Y-%m-%d %H:%M:%S"), loop+1))
                 time.sleep(0.70)
