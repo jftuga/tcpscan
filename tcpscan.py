@@ -48,7 +48,7 @@ from datetime import datetime
 from random import shuffle
 from queue import Queue
 
-pgm_version = "1.41"
+pgm_version = "1.42"
 
 # default maximum number of concurrent threads, changed with -T
 max_workers = 100
@@ -414,7 +414,7 @@ def main() -> None:
     parser.add_argument("-lo", "--loopopen", help="repeat the port scan until all port(s) are open", action="store_true")
     parser.add_argument("-lc", "--loopclose", help="repeat the port scan until all port(s) are closed", action="store_true")
     parser.add_argument("-L", "--listen", help="listen on given TCP port(s) for incoming connection(s) [mutually exclusive; but works with --output and --dns]", action="store_true")
-    parser.add_argument("-sc", "--statechange", help="Wait for a change in state and execute --execopen or --execclose accordingly", action="store_true")
+    parser.add_argument("-sc", "--statechange", help="Wait for a change in state and execute --execopen or --execclose accordingly")
     parser.add_argument("-exop", "--execopen", help="Run program on state change to open. cmdline substitutions: @IP @PORTS @DATE @NEWSTATE")
     parser.add_argument("-excl", "--execclose", help="Run program on state change to closed. cmdline substitutions: @IP @PORTS @DATE @NEWSTATE")
 
@@ -530,6 +530,12 @@ def main() -> None:
                             line = "{}\t{}\tstate changed".format(my_ip, p)
                             print(line)
                             print( chr(7) ) # beep
+
+                            now = time.strftime("%Y%m%d_%H%M%S")
+                            port_list = ",".join([str(port) for port in sorted(all_results.keys())])
+                            cmd = args.statechange.replace("@IP",my_ip).replace("@PORTS", port_list).replace("@DATE", now).replace("@NEWSTATE","OPENED")
+                            execute_pgm(cmd.split(" "))
+
                 print("[%s] completed loops:%s" % (time.strftime("%Y-%m-%d %H:%M:%S"), loop+1))
                 time.sleep(0.70)
 
