@@ -81,6 +81,8 @@ disp_runtime_queue = Queue(0)
 
 # CSV logger for --listen
 fp_tcp_listen = False
+# file pointer:
+# fp_tcp_listen_fp
 
 # save DNS lookups into a dict where key=ip, val=hostname
 dns_cache = {}
@@ -303,7 +305,7 @@ def create_skipped_port_list(ports: str) -> None:
 #############################################################################################
 
 def tcp_connect_handler(sock: socket.socket, remote: list, server: socketserver.TCPServer):
-    global dns_cache
+    global dns_cache, fp_tcp_listen, fp_tcp_listen_fp
 
     now = time.strftime("%Y-%m-%d %H:%M:%S")
     remote_addr = remote[0]
@@ -329,9 +331,9 @@ def tcp_connect_handler(sock: socket.socket, remote: list, server: socketserver.
         now, sock.getsockname()[0], sock.getsockname()[1], remote_addr, remote[1]))
 
     if fp_tcp_listen:
-        fp_tcp_listen.write(
+        fp_tcp_listen_fp.write(
             "%s,%s:%s,%s:%s\n" % (now, sock.getsockname()[0], sock.getsockname()[1], remote_addr, remote[1]))
-        fp_tcp_listen.flush()
+        fp_tcp_listen_fp.flush()
     sock.close()
 
 
@@ -341,8 +343,8 @@ def tcp_listen(port: int) -> None:
     host = "0.0.0.0"
 
     print("Listening for incoming TCP connections on %s:%s" % (host, port))
-    server = socketserver.TCPServer((host, port), tcp_connect_handler)
-    server.serve_forever()
+    with socketserver.TCPServer((host, port), tcp_connect_handler) as server:
+        server.serve_forever()
 
 
 #############################################################################################
@@ -356,14 +358,14 @@ def tcp_listen_setup(ports: str, output: str) -> None:
 
             output: (optional) a CSV file name
     """
-    global fp_tcp_listen
+    global fp_tcp_listen_fp
 
     if output and not os.path.exists(output):
-        fp_tcp_listen = open(output, mode="w", encoding="latin-1")
-        fp_tcp_listen.write("Timestamp,Local,Remote\n")
-        fp_tcp_listen.flush()
+        fp_tcp_listen_fp = open(output, mode="w", encoding="latin-1")
+        fp_tcp_listen_fp.write("Timestamp,Local,Remote\n")
+        fp_tcp_listen_fp.flush()
     elif output:
-        fp_tcp_listen = open(output, mode="a", encoding="latin-1")
+        fp_tcp_listen_fp = open(output, mode="a", encoding="latin-1")
 
     port_list = get_port_list(ports)
     print("\nPress Ctrl-C, Ctrl-\\ or Ctrl-Break to exit.\n")
