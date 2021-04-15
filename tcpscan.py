@@ -155,7 +155,8 @@ def scan_one_host(ip: str, ports: str) -> dict:
         connect_timeout = connect_timeout_lan if is_ip_on_lan(ip) else connect_timeout_wan
 
     all_results = {}
-    if args.shuffleports: shuffle(port_list)
+    if args.shuffleports:
+        shuffle(port_list)
     with concurrent.futures.ThreadPoolExecutor(max_workers) as executor:
         alpha = {executor.submit(scan_one_port, ip, current_port): current_port for current_port in port_list}
         for future in concurrent.futures.as_completed(alpha):
@@ -188,7 +189,7 @@ def scan_one_port(ip: str, port: str) -> tuple:
     port = int(port)
     if port > 65535:
         print("\nError: Port is greater than 65535\n")
-        return (0, False)
+        return 0, False
 
     if port in skipped_port_list:
         if args.verbose:
@@ -198,7 +199,7 @@ def scan_one_port(ip: str, port: str) -> tuple:
                 fp_output.write("%s\n" % (line.replace("\t", ",")))
                 fp_output.flush()
         skipped_ports += 1
-        return (0, False)
+        return 0, False
 
     try:
         ports_scanned += 1
@@ -250,9 +251,6 @@ def disp_runtime():
     """Periodically display number of hosts and ports scanned every N seconds
        where N is given by the -r command line switch
 
-       Args:
-           None
-
        Returns:
            None
     """
@@ -267,7 +265,7 @@ def disp_runtime():
 
     pps = (ports_scanned - runtime_stats_last_port_count) / runtime_stats
     print("[%s]\thosts:%s\tports:%s\tports/sec:%s" % (
-    time.strftime("%Y-%m-%d %H:%M:%S"), hosts_scanned, ports_scanned, int(pps)), file=sys.stderr)
+        time.strftime("%Y-%m-%d %H:%M:%S"), hosts_scanned, ports_scanned, int(pps)), file=sys.stderr)
     runtime_stats_last_port_count = ports_scanned
 
 
@@ -328,7 +326,7 @@ def tcp_connect_handler(sock: socket.socket, remote: list, server: socketserver.
             remote_addr = dns_cache[remote_addr]
 
     print("[%s] Incoming connection on %s:%s from %s:%s" % (
-    now, sock.getsockname()[0], sock.getsockname()[1], remote_addr, remote[1]))
+        now, sock.getsockname()[0], sock.getsockname()[1], remote_addr, remote[1]))
 
     if fp_tcp_listen:
         fp_tcp_listen.write(
@@ -379,9 +377,6 @@ def tcp_listen_setup(ports: str, output: str) -> None:
 
 def main() -> None:
     """Process command-line arguments, scan hosts/ports, print results.
-    
-    Args:
-        None
 
     Returns:
         None
@@ -406,7 +401,7 @@ def main() -> None:
     parser.add_argument("-T", "--threads", help="number of concurrent threads, default: %s" % (max_workers))
     parser.add_argument("-t", "--timeout",
                         help="number of seconds to wait for a connect, default: %s for lan, %s for wan" % (
-                        connect_timeout_lan, connect_timeout_wan))
+                            connect_timeout_lan, connect_timeout_wan))
     parser.add_argument("-s", "--shufflehosts", help="randomize the order IPs are scanned", action="store_true")
     parser.add_argument("-S", "--shuffleports", help="randomize the order ports are scanned", action="store_true")
     parser.add_argument("-c", "--closed", help="output ports that are closed", action="store_true")
@@ -505,7 +500,7 @@ def main() -> None:
     t1 = datetime.now()
     for loop in range(0, loop_seconds):
         for tmp in hosts:
-            my_ip = "%s" % (tmp)
+            my_ip = "%s" % tmp
             if tmp in ip_skiplist:
                 if args.verbose:
                     line = "{}\tn/a\thost-excluded".format(my_ip)
@@ -516,7 +511,7 @@ def main() -> None:
                 skipped_hosts += 1
                 continue
             try:
-                all_results = scan_one_host("%s" % (my_ip), port_list)
+                all_results = scan_one_host("%s" % my_ip, port_list)
             except KeyboardInterrupt:
                 print("\nYou pressed Ctrl+C")
                 break
@@ -561,10 +556,11 @@ def main() -> None:
     if runtime_stats:
         now = int(time.time())
         divisor = now - runtime_stats_last_timestamp
-        if not divisor: divisor = 1
+        if not divisor:
+            divisor = 1
         pps = (ports_scanned - runtime_stats_last_port_count) / divisor
         print("[%s]\thosts: %s\tports: %s\tports/sec: %s" % (
-        time.strftime("%Y-%m-%d %H:%M:%S"), hosts_scanned, ports_scanned, int(pps)), file=sys.stderr)
+            time.strftime("%Y-%m-%d %H:%M:%S"), hosts_scanned, ports_scanned, int(pps)), file=sys.stderr)
 
     if args.verbose:
         print()
