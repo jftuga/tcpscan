@@ -47,7 +47,7 @@ from datetime import datetime
 from random import shuffle
 from queue import Queue
 
-pgm_version = "1.35"
+pgm_version = "1.40"
 
 # default maximum number of concurrent threads, changed with -T
 max_workers = 100
@@ -85,9 +85,10 @@ fp_tcp_listen = False
 # save DNS lookups into a dict where key=ip, val=hostname
 dns_cache = {}
 
+
 #############################################################################################
 
-def is_ip_on_lan(ip:str) -> bool:
+def is_ip_on_lan(ip: str) -> bool:
     """Return true when the given IP is in a IANA IPv4 private range, otherwise false
 
     Args:
@@ -99,11 +100,12 @@ def is_ip_on_lan(ip:str) -> bool:
     """
     return ipaddress.IPv4Address(ip).is_private
 
+
 #############################################################################################
 
-def get_port_list(ports:str) -> list:
+def get_port_list(ports: str) -> list:
     if ports.find("-") > 0 and ports.find(",") == -1:
-        # hypen delimited range of ports
+        # hyphen-delimited range of ports
         start, end = ports.split("-")
         start = int(start)
         end = int(end)
@@ -113,12 +115,13 @@ def get_port_list(ports:str) -> list:
         if end > 65535:
             print("\nError: For -p option, ending port is greater than 65535\n")
             sys.exit(1)
-        port_list = list(range(start,end+1))
+        port_list = list(range(start, end + 1))
     else:
         # comma separated list of ports, can also include a single port
         port_list = ports.split(",")
 
     return port_list
+
 
 #############################################################################################
 
@@ -162,9 +165,10 @@ def scan_one_host(ip: str, ports: str) -> dict:
 
     return all_results
 
+
 #############################################################################################
 
-def scan_one_port(ip: str, port:str) -> tuple:
+def scan_one_port(ip: str, port: str) -> tuple:
     """Scan the given host for one open port.
     
     Args:
@@ -184,24 +188,24 @@ def scan_one_port(ip: str, port:str) -> tuple:
     port = int(port)
     if port > 65535:
         print("\nError: Port is greater than 65535\n")
-        return (0,False)
+        return (0, False)
 
     if port in skipped_port_list:
         if args.verbose:
-            line = "{}\t{}\tport-excluded".format(ip,port)
+            line = "{}\t{}\tport-excluded".format(ip, port)
             print(line)
-            if args.output: 
-                fp_output.write("%s\n" % (line.replace("\t",",")))
+            if args.output:
+                fp_output.write("%s\n" % (line.replace("\t", ",")))
                 fp_output.flush()
         skipped_ports += 1
-        return (0,False)
+        return (0, False)
 
-    try: 
+    try:
         ports_scanned += 1
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(connect_timeout)
         result = sock.connect_ex((ip, port))
-        
+
         if result == 0:
             valid = True
             opened_ports += 1
@@ -212,32 +216,33 @@ def scan_one_port(ip: str, port:str) -> tuple:
                     name = name[0]
                 except:
                     name = ""
-                line = "{}\t{}\topen\t{}".format(ip, port,name)
+                line = "{}\t{}\topen\t{}".format(ip, port, name)
             else:
                 line = "{}\t{}\topen".format(ip, port)
             print(line)
-            if args.output: 
-                fp_output.write("%s\n" % (line.replace("\t",",")))
+            if args.output:
+                fp_output.write("%s\n" % (line.replace("\t", ",")))
                 fp_output.flush()
         else:
             valid = False
-            if args.closed: 
+            if args.closed:
                 line = "{}\t{}\tclosed".format(ip, port)
                 print(line)
-                if args.output: 
-                    fp_output.write("%s\n" % (line.replace("\t",",")))
+                if args.output:
+                    fp_output.write("%s\n" % (line.replace("\t", ",")))
                     fp_output.flush()
-            
+
         sock.close()
-        return (port,valid)
+        return (port, valid)
 
     except KeyboardInterrupt:
         print("You pressed Ctrl+C")
-        return (0,False)
+        return (0, False)
 
     except socket.error:
-        print("Couldn't connect to server %s on port %s" % (ip,port))
-        return (0,False)
+        print("Couldn't connect to server %s on port %s" % (ip, port))
+        return (0, False)
+
 
 #############################################################################################
 
@@ -254,20 +259,21 @@ def disp_runtime():
     global ports_scanned, runtime_stats, runtime_stats_last_timestamp, runtime_stats_last_port_count
     global disp_runtime_queue
 
-    t = threading.Timer(runtime_stats,disp_runtime)
+    t = threading.Timer(runtime_stats, disp_runtime)
     disp_runtime_queue.put(t)
     t.start()
 
     if not ports_scanned: return
-    
-    pps = (ports_scanned-runtime_stats_last_port_count) / runtime_stats
-    print("[%s]\thosts:%s\tports:%s\tports/sec:%s" % (time.strftime("%Y-%m-%d %H:%M:%S"),hosts_scanned,ports_scanned,int(pps)), file=sys.stderr)
+
+    pps = (ports_scanned - runtime_stats_last_port_count) / runtime_stats
+    print("[%s]\thosts:%s\tports:%s\tports/sec:%s" % (
+    time.strftime("%Y-%m-%d %H:%M:%S"), hosts_scanned, ports_scanned, int(pps)), file=sys.stderr)
     runtime_stats_last_port_count = ports_scanned
 
 
 #############################################################################################
 
-def create_skipped_port_list(ports:str) -> None:
+def create_skipped_port_list(ports: str) -> None:
     """Create a Python list from the given argument string.
     
     Args:
@@ -280,7 +286,7 @@ def create_skipped_port_list(ports:str) -> None:
 
     """
 
-    global skipped_port_list 
+    global skipped_port_list
 
     if ports.find("-") > 0 and ports.find(",") == -1:
         # hypen delimited range of ports
@@ -290,14 +296,15 @@ def create_skipped_port_list(ports:str) -> None:
         if end < start:
             print("\nError: For -X option, ending port is less than starting port\n")
             sys.exit(1)
-        skipped_port_list = list(range(start,end+1))
+        skipped_port_list = list(range(start, end + 1))
     else:
         # comma separated list of ports, can also include a single port
         skipped_port_list = [int(n) for n in ports.split(",")]
 
+
 #############################################################################################
 
-def tcp_connect_handler(sock:socket.socket, remote:list, server:socketserver.TCPServer):
+def tcp_connect_handler(sock: socket.socket, remote: list, server: socketserver.TCPServer):
     global dns_cache
 
     now = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -311,7 +318,7 @@ def tcp_connect_handler(sock:socket.socket, remote:list, server:socketserver.TCP
             except socket.herror:
                 pass
             except:
-                msg = "\n%s\n%s\n" % (sys.exc_info()[0],sys.exc_info()[1])
+                msg = "\n%s\n%s\n" % (sys.exc_info()[0], sys.exc_info()[1])
                 print(msg)
 
             if len(remote_addr_info) >= 1:
@@ -320,25 +327,29 @@ def tcp_connect_handler(sock:socket.socket, remote:list, server:socketserver.TCP
         else:
             remote_addr = dns_cache[remote_addr]
 
-    print("[%s] Incoming connection on %s:%s from %s:%s" % (now,sock.getsockname()[0],sock.getsockname()[1],remote_addr,remote[1]))
-    
+    print("[%s] Incoming connection on %s:%s from %s:%s" % (
+    now, sock.getsockname()[0], sock.getsockname()[1], remote_addr, remote[1]))
+
     if fp_tcp_listen:
-        fp_tcp_listen.write("%s,%s:%s,%s:%s\n" % (now,sock.getsockname()[0],sock.getsockname()[1],remote_addr,remote[1]))
+        fp_tcp_listen.write(
+            "%s,%s:%s,%s:%s\n" % (now, sock.getsockname()[0], sock.getsockname()[1], remote_addr, remote[1]))
         fp_tcp_listen.flush()
     sock.close()
 
+
 #############################################################################################
 
-def tcp_listen(port:int) -> None:
+def tcp_listen(port: int) -> None:
     host = "0.0.0.0"
 
-    print("Listening for incoming TCP connections on %s:%s" % (host,port))
+    print("Listening for incoming TCP connections on %s:%s" % (host, port))
     server = socketserver.TCPServer((host, port), tcp_connect_handler)
     server.serve_forever()
 
+
 #############################################################################################
 
-def tcp_listen_setup(ports:str, output:str) -> None:
+def tcp_listen_setup(ports: str, output: str) -> None:
     """Instead of scanning ports, listen for incoming connection on a group of ports
        and log them to a CV file
 
@@ -350,11 +361,11 @@ def tcp_listen_setup(ports:str, output:str) -> None:
     global fp_tcp_listen
 
     if output and not os.path.exists(output):
-        fp_tcp_listen = open(output,mode="w",encoding="latin-1")
+        fp_tcp_listen = open(output, mode="w", encoding="latin-1")
         fp_tcp_listen.write("Timestamp,Local,Remote\n")
         fp_tcp_listen.flush()
     elif output:
-        fp_tcp_listen = open(output,mode="a",encoding="latin-1")
+        fp_tcp_listen = open(output, mode="a", encoding="latin-1")
 
     port_list = get_port_list(ports)
     print("\nPress Ctrl-C, Ctrl-\\ or Ctrl-Break to exit.\n")
@@ -362,6 +373,7 @@ def tcp_listen_setup(ports:str, output:str) -> None:
         alpha = {executor.submit(tcp_listen, int(current_port)): current_port for current_port in port_list}
         for future in concurrent.futures.as_completed(alpha):
             pass
+
 
 #############################################################################################
 
@@ -382,13 +394,19 @@ def main() -> None:
     global resolve_dns, runtime_stats, runtime_stats_last_timestamp
     global disp_runtime_queue
 
-    parser = argparse.ArgumentParser(description="tcpscan: a simple, multi-threaded, cross-platform IPv4 TCP port scanner", epilog="tcpscan version: %s" % (pgm_version))
+    parser = argparse.ArgumentParser(
+        description="tcpscan: a simple, multi-threaded, cross-platform IPv4 TCP port scanner",
+        epilog="tcpscan version: %s" % (pgm_version))
     parser.add_argument("target", help="e.g. 192.168.1.0/24 192.168.1.100 www.example.com", nargs="?", default=".")
     parser.add_argument("-x", "--skipnetblock", help="skip a sub-netblock, e.g. 192.168.1.96/28")
     parser.add_argument("-X", "--skipports", help="exclude a subset of ports, e.g. 135-139")
-    parser.add_argument("-p", "--ports", help="comma separated list or hyphenated range, e.g. 22,80,443,445,515  e.g. 80-515  e.g. all (without -p, the %s most common ports are scanned)" % (len(default_port_list)))
+    parser.add_argument("-p", "--ports",
+                        help="comma separated list or hyphenated range, e.g. 22,80,443,445,515  e.g. 80-515  e.g. all (without -p, the %s most common ports are scanned)" % (
+                            len(default_port_list)))
     parser.add_argument("-T", "--threads", help="number of concurrent threads, default: %s" % (max_workers))
-    parser.add_argument("-t", "--timeout", help="number of seconds to wait for a connect, default: %s for lan, %s for wan" % (connect_timeout_lan,connect_timeout_wan))
+    parser.add_argument("-t", "--timeout",
+                        help="number of seconds to wait for a connect, default: %s for lan, %s for wan" % (
+                        connect_timeout_lan, connect_timeout_wan))
     parser.add_argument("-s", "--shufflehosts", help="randomize the order IPs are scanned", action="store_true")
     parser.add_argument("-S", "--shuffleports", help="randomize the order ports are scanned", action="store_true")
     parser.add_argument("-c", "--closed", help="output ports that are closed", action="store_true")
@@ -397,10 +415,13 @@ def main() -> None:
     parser.add_argument("-v", "--verbose", help="output statistics", action="store_true")
     parser.add_argument("-r", "--runtime", help="periodically display runtime stats every RUNTIME seconds to STDERR")
     parser.add_argument("-l", "--loop", help="repeat the port scan LOOP times, 0 for continuous")
-    parser.add_argument("-lo", "--loopopen", help="repeat the port scan until all port(s) are open", action="store_true")
-    parser.add_argument("-lc", "--loopclose", help="repeat the port scan until all port(s) are closed", action="store_true")
-    parser.add_argument("-L", "--listen", help="listen on given TCP port(s) for incoming connection(s) [mutually exclusive; but works with --output and --dns]", action="store_true")
-
+    parser.add_argument("-lo", "--loopopen", help="repeat the port scan until all port(s) are open",
+                        action="store_true")
+    parser.add_argument("-lc", "--loopclose", help="repeat the port scan until all port(s) are closed",
+                        action="store_true")
+    parser.add_argument("-L", "--listen",
+                        help="listen on given TCP port(s) for incoming connection(s) [mutually exclusive; but works with --output and --dns]",
+                        action="store_true")
 
     args = parser.parse_args()
 
@@ -409,14 +430,14 @@ def main() -> None:
 
     if args.listen:
         try:
-            tcp_listen_setup(args.ports,args.output)
+            tcp_listen_setup(args.ports, args.output)
         except:
-            msg = "\n%s\n%s\n" % (sys.exc_info()[0],sys.exc_info()[1])
+            msg = "\n%s\n%s\n" % (sys.exc_info()[0], sys.exc_info()[1])
             print(msg)
             sys.exit(1)
         finally:
             sys.exit(0)
-    
+
     if "." == args.target:
         args.target = "127.0.0.1"
     if args.threads:
@@ -428,7 +449,7 @@ def main() -> None:
     if args.timeout:
         connect_timeout = float(args.timeout)
     if args.output:
-        fp_output = open(args.output,mode="w",encoding="latin-1")
+        fp_output = open(args.output, mode="w", encoding="latin-1")
     if args.skipports:
         create_skipped_port_list(args.skipports)
     if args.runtime:
@@ -448,8 +469,8 @@ def main() -> None:
         loop_seconds = 0
 
     if 0 == loop_seconds:
-            loop_seconds = int(sys.maxsize) - 1
-    
+        loop_seconds = int(sys.maxsize) - 1
+
     port_list = args.ports if args.ports else default_port_list
     ip_skiplist = ipaddress.ip_network(args.skipnetblock) if args.skipnetblock else []
 
@@ -470,11 +491,11 @@ def main() -> None:
         hosts = list(tmp.hosts())
         if args.shufflehosts:
             shuffle(hosts)
-        
-        if not len(hosts): # a single ip-address was given on cmd-line
-            tmp = args.target.replace("/32","")
+
+        if not len(hosts):  # a single ip-address was given on cmd-line
+            tmp = args.target.replace("/32", "")
             hosts = (tmp,)
-      
+
     # all_results and now_all_opened are used when args.loopopen=True
     all_results = {}
     now_all_opened = False
@@ -482,20 +503,20 @@ def main() -> None:
     now_all_closed = False
 
     t1 = datetime.now()
-    for loop in range(0,loop_seconds):
+    for loop in range(0, loop_seconds):
         for tmp in hosts:
             my_ip = "%s" % (tmp)
             if tmp in ip_skiplist:
                 if args.verbose:
                     line = "{}\tn/a\thost-excluded".format(my_ip)
                     print(line)
-                    if args.output: 
-                        fp_output.write("%s\n" % (line.replace("\t",",")))
+                    if args.output:
+                        fp_output.write("%s\n" % (line.replace("\t", ",")))
                         fp_output.flush()
                 skipped_hosts += 1
                 continue
             try:
-                all_results = scan_one_host( "%s" % (my_ip), port_list )
+                all_results = scan_one_host("%s" % (my_ip), port_list)
             except KeyboardInterrupt:
                 print("\nYou pressed Ctrl+C")
                 break
@@ -504,10 +525,10 @@ def main() -> None:
                 if False not in all_results.values():
                     args.loop = False
                     now_all_opened = True
-                    print( chr(7) ) # beep
+                    print(chr(7))  # beep
 
         if now_all_opened:
-            print("[%s] completed loops:%s" % (time.strftime("%Y-%m-%d %H:%M:%S"), loop+1))
+            print("[%s] completed loops:%s" % (time.strftime("%Y-%m-%d %H:%M:%S"), loop + 1))
             break
 
         if args.loopclose:
@@ -519,19 +540,18 @@ def main() -> None:
 
         if loop_seconds and args.loop:
             try:
-                print("[%s] completed loops:%s" % (time.strftime("%Y-%m-%d %H:%M:%S"), loop+1))
+                print("[%s] completed loops:%s" % (time.strftime("%Y-%m-%d %H:%M:%S"), loop + 1))
                 print()
                 time.sleep(0.70)
             except KeyboardInterrupt:
                 print("\nYou pressed Ctrl+C")
                 break
 
-
     if args.loopclose and now_all_closed:
         if not loop:
             loop += 1
         print("[%s] completed loops:%s" % (time.strftime("%Y-%m-%d %H:%M:%S"), loop))
-        print( chr(7) ) # beep
+        print(chr(7))  # beep
 
     if args.runtime:
         while not disp_runtime_queue.empty():
@@ -541,9 +561,10 @@ def main() -> None:
     if runtime_stats:
         now = int(time.time())
         divisor = now - runtime_stats_last_timestamp
-        if not divisor: divisor=1
-        pps = (ports_scanned-runtime_stats_last_port_count) / divisor
-        print("[%s]\thosts: %s\tports: %s\tports/sec: %s" % (time.strftime("%Y-%m-%d %H:%M:%S"),hosts_scanned,ports_scanned,int(pps)), file=sys.stderr)
+        if not divisor: divisor = 1
+        pps = (ports_scanned - runtime_stats_last_port_count) / divisor
+        print("[%s]\thosts: %s\tports: %s\tports/sec: %s" % (
+        time.strftime("%Y-%m-%d %H:%M:%S"), hosts_scanned, ports_scanned, int(pps)), file=sys.stderr)
 
     if args.verbose:
         print()
@@ -554,7 +575,7 @@ def main() -> None:
         print("Opened Ports   : ", opened_ports)
         print("Skipped Ports  : ", skipped_ports)
         print("Ports Scanned  : ", ports_scanned)
-        print("Completed Loops: ", loop+1)
+        print("Completed Loops: ", loop + 1)
         print()
     else:
         if not opened_ports:
@@ -566,6 +587,7 @@ def main() -> None:
 
     if args.output:
         fp_output.close()
+
 
 #############################################################################################
 
