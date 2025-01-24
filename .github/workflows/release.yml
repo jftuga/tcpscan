@@ -1,6 +1,12 @@
 ---
+name: Build Release
+
+on:
+  workflow_dispatch:
+
 jobs:
   build:
+    name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -9,14 +15,29 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.13
+          python-version: '3.12'
 
-      - run: pip install pyinstaller
-      - run: pyinstaller -F --noupx tcpscan.py
-      # verify that it works
-      - run: ./dist/tcp-scan/tcp-scan --help
-      - uses: actions/upload-artifact@v4
+      - name: Install dependencies
+        run: pip install pyinstaller
+
+      - name: Build executable
+        run: pyinstaller -F --noupx tcpscan.py
+
+      - name: Test executable
+        run: |
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            ./dist/tcpscan.exe --help
+          else
+            ./dist/tcpscan --help
+          fi
+        shell: bash
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
+          name: tcpscan-${{ runner.os }}
           path: dist/*
