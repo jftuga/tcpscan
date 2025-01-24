@@ -76,7 +76,8 @@ jobs:
             apt-get update && \
             apt-get install -y build-essential && \
             pip install pyinstaller && \
-            pyinstaller -F --noupx tcpscan.py"
+            pyinstaller -F --noupx tcpscan.py && \
+            chown -R $(id -u):$(id -g) dist/"
 
       # Testing executables
       - name: Test executable (AMD64)
