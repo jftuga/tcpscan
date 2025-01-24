@@ -28,34 +28,56 @@ jobs:
           - platform: linux-arm
             os: ubuntu-latest
             artifact: tcpscan-linux-arm
+            docker_platform: linux/arm/v7
+            docker_image: python:3.12-slim
           - platform: linux-arm64
             os: ubuntu-latest
             artifact: tcpscan-linux-arm64
+            docker_platform: linux/arm64
+            docker_image: python:3.12-slim
           - platform: linux-ppc64le
             os: ubuntu-latest
             artifact: tcpscan-linux-ppc64le
+            docker_platform: linux/ppc64le
+            docker_image: python:3.12-slim
 
     steps:
       - uses: actions/checkout@v4
       
-      - name: Set up QEMU
-        if: runner.os != 'Windows'
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm,arm64,ppc64le
-
+      # For non-Docker builds (Windows and Linux AMD64)
       - name: Set up Python
+        if: "!contains(matrix.platform, 'arm') && matrix.platform != 'linux-ppc64le'"
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Install dependencies
+      - name: Install dependencies (non-Docker)
+        if: "!contains(matrix.platform, 'arm') && matrix.platform != 'linux-ppc64le'"
         run: pip install pyinstaller
 
-      - name: Build executable
+      - name: Build executable (non-Docker)
+        if: "!contains(matrix.platform, 'arm') && matrix.platform != 'linux-ppc64le'"
         run: pyinstaller -F --noupx tcpscan.py
 
-      - name: Test executable
+      # For Docker builds (ARM and PPC64LE)
+      - name: Set up QEMU
+        if: contains(matrix.platform, 'arm') || matrix.platform == 'linux-ppc64le'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm,arm64,ppc64le
+
+      - name: Build executable (Docker)
+        if: contains(matrix.platform, 'arm') || matrix.platform == 'linux-ppc64le'
+        run: |
+          docker run --rm --platform ${{ matrix.docker_platform }} \
+            -v ${{ github.workspace }}:/workspace \
+            ${{ matrix.docker_image }} \
+            /bin/bash -c "cd /workspace && \
+            pip install pyinstaller && \
+            pyinstaller -F --noupx tcpscan.py"
+
+      # Testing executables
+      - name: Test executable (AMD64)
         if: matrix.platform == 'windows-amd64' || matrix.platform == 'linux-amd64'
         run: |
           if [ "${{ matrix.platform }}" == "windows-amd64" ]; then
@@ -66,6 +88,7 @@ jobs:
           fi
         shell: bash
 
+      # Rename artifacts
       - name: Rename artifacts for release
         run: |
           cd dist
