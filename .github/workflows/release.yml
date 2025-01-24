@@ -3,22 +3,47 @@ name: Build Release
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. v1.0.0)'
+        required: true
   push:
     branches:
       - gh-action
 
 jobs:
   build:
-    name: Build on ${{ matrix.os }}
+    name: Build on ${{ matrix.platform }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: ["windows-latest", "ubuntu-latest", "macos-latest"]
+        include:
+          - platform: windows-amd64
+            os: windows-latest
+            artifact: tcpscan-windows-amd64.exe
+          - platform: linux-amd64
+            os: ubuntu-latest
+            artifact: tcpscan-linux-amd64
+          - platform: linux-arm
+            os: ubuntu-latest
+            artifact: tcpscan-linux-arm
+          - platform: linux-arm64
+            os: ubuntu-latest
+            artifact: tcpscan-linux-arm64
+          - platform: linux-ppc64le
+            os: ubuntu-latest
+            artifact: tcpscan-linux-ppc64le
 
     steps:
       - uses: actions/checkout@v4
       
+      - name: Set up QEMU
+        if: runner.os != 'Windows'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm,arm64,ppc64le
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -31,16 +56,28 @@ jobs:
         run: pyinstaller -F --noupx tcpscan.py
 
       - name: Test executable
+        if: matrix.platform == 'windows-amd64' || matrix.platform == 'linux-amd64'
         run: |
-          if [ "${{ runner.os }}" == "Windows" ]; then
+          if [ "${{ matrix.platform }}" == "windows-amd64" ]; then
             ./dist/tcpscan.exe --help
           else
+            chmod +x ./dist/tcpscan
             ./dist/tcpscan --help
+          fi
+        shell: bash
+
+      - name: Rename artifacts for release
+        run: |
+          cd dist
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            mv tcpscan.exe ${{ matrix.artifact }}
+          else
+            mv tcpscan ${{ matrix.artifact }}
           fi
         shell: bash
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tcpscan-${{ runner.os }}
-          path: dist/*
+          name: ${{ matrix.platform }}
+          path: dist/${{ matrix.artifact }}
