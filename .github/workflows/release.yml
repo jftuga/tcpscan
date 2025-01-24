@@ -21,23 +21,23 @@ jobs:
         include:
           - platform: windows-amd64
             os: windows-latest
-            artifact: tcpscan-windows-amd64.exe
+            artifact_name: tcpscan-windows-amd64
           - platform: linux-amd64
             os: ubuntu-latest
-            artifact: tcpscan-linux-amd64
+            artifact_name: tcpscan-linux-amd64
           - platform: linux-arm
             os: ubuntu-latest
-            artifact: tcpscan-linux-arm
+            artifact_name: tcpscan-linux-arm
             docker_platform: linux/arm/v7
             docker_image: python:3.12-slim
           - platform: linux-arm64
             os: ubuntu-latest
-            artifact: tcpscan-linux-arm64
+            artifact_name: tcpscan-linux-arm64
             docker_platform: linux/arm64
             docker_image: python:3.12-slim
           - platform: linux-ppc64le
             os: ubuntu-latest
-            artifact: tcpscan-linux-ppc64le
+            artifact_name: tcpscan-linux-ppc64le
             docker_platform: linux/ppc64le
             docker_image: python:3.12-slim
 
@@ -80,8 +80,7 @@ jobs:
             chown -R $(id -u):$(id -g) dist/"
 
       # Testing executables
-      - name: Test executable (AMD64)
-        if: matrix.platform == 'windows-amd64' || matrix.platform == 'linux-amd64'
+      - name: Test executable
         run: |
           if [ "${{ matrix.platform }}" == "windows-amd64" ]; then
             ./dist/tcpscan.exe --help
@@ -91,14 +90,33 @@ jobs:
           fi
         shell: bash
 
-      # Rename artifacts
-      - name: Rename artifacts for release
+      # Get version from input or latest tag
+      - name: Get version
+        id: get_version
         run: |
-          cd dist
-          if [ "${{ runner.os }}" == "Windows" ]; then
-            mv tcpscan.exe ${{ matrix.artifact }}
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
           else
-            mv tcpscan ${{ matrix.artifact }}
+            echo "version=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
+      # Prepare release artifacts
+      - name: Prepare artifacts for release
+        run: |
+          VERSION="${{ steps.get_version.outputs.version }}"
+          RELEASE_DIR="tcpscan-${VERSION}"
+          mkdir -p "dist/${RELEASE_DIR}"
+          cp README.md "dist/${RELEASE_DIR}/"
+          
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            mv dist/tcpscan.exe "dist/${RELEASE_DIR}/tcpscan.exe"
+            cd dist
+            zip -r "${{ matrix.artifact_name }}-${VERSION}.zip" "${RELEASE_DIR}"
+          else
+            mv dist/tcpscan "dist/${RELEASE_DIR}/tcpscan"
+            cd dist
+            tar -cJf "${{ matrix.artifact_name }}-${VERSION}.tar.xz" "${RELEASE_DIR}"
           fi
         shell: bash
 
@@ -106,4 +124,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.platform }}
-          path: dist/${{ matrix.artifact }}
+          path: |
+            dist/${{ matrix.artifact_name }}-${{ steps.get_version.outputs.version }}.zip
+            dist/${{ matrix.artifact_name }}-${{ steps.get_version.outputs.version }}.tar.xz
