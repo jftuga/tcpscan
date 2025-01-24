@@ -74,7 +74,7 @@ jobs:
             ${{ matrix.docker_image }} \
             /bin/bash -c "cd /workspace && \
             apt-get update && \
-            apt-get install -y build-essential && \
+            apt-get install -y build-essential zlib1g-dev && \
             pip install pyinstaller && \
             pyinstaller -F --noupx tcpscan.py && \
             chown -R $(id -u):$(id -g) dist/"
