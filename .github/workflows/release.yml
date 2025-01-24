@@ -73,6 +73,8 @@ jobs:
             -v ${{ github.workspace }}:/workspace \
             ${{ matrix.docker_image }} \
             /bin/bash -c "cd /workspace && \
+            apt-get update && \
+            apt-get install -y binutils && \
             pip install pyinstaller && \
             pyinstaller -F --noupx tcpscan.py"
 
